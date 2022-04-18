@@ -1,5 +1,5 @@
 // based on cs3650 starter code
-// test git
+
 #include <assert.h>
 #include <bsd/string.h>
 #include <dirent.h>
