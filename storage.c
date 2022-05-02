@@ -268,41 +268,35 @@ int storage_truncate(const char* path, off_t size) {
     return 0;
 }
 
-// retrieve the whole data that the given path contains
-const char* retrieve_data(const char* path) {
+// read the given path bytes at the given max size bytes and copy it in given buf
+int storage_read(const char* path, char* buf, size_t size, off_t offset) {
     // retrieve the given path's inode
     int pathInum = tree_lookup(path);
     //assert(pathInum >= 0);
     if (pathInum < 0) {
-        return NULL;
+        return -ENOENT;
     }
     inode_t* pathInode = get_inode(pathInum);
 
     int pathBNum = pathInode->block;
     assert(pathBNum > 2);
-    const char* wholeData = (const char*) blocks_get_block(pathBNum);
 
-    return wholeData;
-}
+    void* dataToRead = blocks_get_block(pathBNum); 
 
-// read the given path bytes at the given max size bytes and copy it in given buf
-int storage_read(const char* path, char* buf, size_t size, off_t offset) {
-    const char* wholeData = retrieve_data(path); // get whole data that is in given path
-    if (wholeData == NULL) {
-        return -ENOENT;
-    }
-
-    int dataSize = strlen(wholeData) + 1;
-    if (dataSize > size) {
+    int bytesToRead = pathInode->size - offset;
+    if (bytesToRead > size) {
         // indicates the file data size is bigger than the given max size
         // so read only max size
-        dataSize = size;
+        bytesToRead = size;
+    }
+    if (bytesToRead < 0) {
+        // in case when node's size - offset results to negative
+        bytesToRead = 0; 
     }
 
-    strncpy(buf, wholeData, dataSize); // read bytes and copy it in given buf
-    return dataSize; // return n bytes read
+    memcpy(buf, dataToRead+offset, bytesToRead); // read bytes and copy it in given buf
+    return bytesToRead; // return n bytes read
 }
-
 // write the data in the given path with provided size
 int storage_write(const char *path, const char *buf, size_t size, off_t offset) {
     // retrieve the given path's inode
@@ -316,12 +310,11 @@ int storage_write(const char *path, const char *buf, size_t size, off_t offset) 
     assert(pathInode->block!=0);
     void * dataB = blocks_get_block(pathInode->block);
 
-    memcpy(dataB, buf, size); // write the given data into data block
+    memcpy(dataB+offset, buf, size); // write the given data into data block
 
-    grow_inode(pathInode, size); // update inode's size
+    grow_inode(pathInode, size+offset); // update inode's size
     return size; // indicates success on write
 }
-
 // set the time of the given path inode
 int storage_set_time(const char* path, const struct timespec ts[2]) {
     // retrieve the given path's inode
