@@ -1,7 +1,7 @@
 # Fuse File System 
 
 
-For this project, I used given resources files (below) in order to build a FUSE filesystem driver that will let you mount a 1MB disk image (data file) as a filesystem. It has a basic features of file system, such as, creating, reading from, writing into, renaming, and deleting files and directories. 
+For this project, I used given resources files (below) in order to build a FUSE filesystem driver that will let us mount a 1MB disk image (data file) as a filesystem. It has a basic features of file system, such as, creating, reading from, writing into, renaming, and deleting files and directories. 
 
 The following contents are provided as the starter codes:
 
